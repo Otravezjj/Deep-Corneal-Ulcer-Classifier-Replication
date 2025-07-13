@@ -1,0 +1,43 @@
+[workspace]
+authors = ["John Jackson <jdjacks@sbcglobal.net>"]
+channels = ["conda-forge"]
+name = "redd-lab-dev"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+python = "3.12.*"
+
+
+[pypi-dependencies]
+numpy = "==2.2.5"
+PyQt5-Qt5 = "==5.15.2"
+PyQt5 = "==5.15.*"
+napari = "==0.5.6"
+napari-cool-tools-oct-preproc = { path = "napari-cool-tools-oct-preproc", editable = true }
+napari-cool-tools-submenu-patch = { path = "napari-cool-tools-submenu-patch", editable = true }
+
+
+kornia = "==0.8.*"
+flatbuffers = "==25.2.*"
+packaging = "==24.*"
+protobuf = "==6.30.*"
+matplotlib = "==3.9.*"
+ruamel-yaml = "==0.18.10"
+tomlkit = "==0.13.*"
+deeplake = "==4.2.1"
+polars = "==1.27.1"
+lightning = "==2.4.0"
+omegaconf = "==2.3.0"
+lightly = ">=1.5.13"
+h5py = ">=3.12.5"
+peft = "==0.12.0"
+torchinfo = "==1.8.0"
+tensorboard = "==2.17.*"
+
+nvidia-cuda-runtime-cu12 = "==12.4.*"
+torch = { version = "==2.4.*", index = "https://download.pytorch.org/whl/cu124" }
+torchvision = { version = "==0.19.*", index = "https://download.pytorch.org/whl/cu124" }
+torchaudio = { version = "==2.4.*", index = "https://download.pytorch.org/whl/cu124" }

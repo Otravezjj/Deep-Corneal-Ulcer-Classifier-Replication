@@ -1,0 +1,73 @@
+batch_settings:
+  target_bs: 1024    #64 #256 #64 #256 #32   #trainng is sensitive to this humongo batch for SSL training smaller for finetuning quicker updates better for fine tune
+  bs: 64 #128 #256 #64 #16 #32            #16 #32 #1 #32 #128 #16
+
+data_settings:
+  data_path: "/data/KeratitisDB/root/" #"../data"
+  trial_nm: "KDB_finetune"
+  num_workers: 0 #16 max should be num_cores//num_gpus = 16 on lambda
+  persistent_workers: True #False
+  shuffle: False #True
+  drop_last: True #False
+  dataset_model: "DeepLakeCUID"
+
+determinitstic_settings:
+  data_split_seed: 42
+  seed: 1740330543 #[1740330543, 1683213118, 2361551548,42,60]
+
+callback_settings:
+  top_k: 5
+  n_epoch: 5 #20
+  n_steps: 500 # currently this is not in use
+
+model_settings:
+  precision: "16-mixed" #None, #16 outdated
+  lr: 1e-4 #1e-6 #1e-7 
+  num_epochs: 100 #225 #100 #25 #200 
+  num_classes: 2 #2 # 10 classes instead of 2 seams to learn faster? maybe hidden layers are required?
+  lora_settings:
+    use_LoRA: False #True
+    freeze: False
+    unfreeze_last: False #True
+    unfreeze_norms: False #True
+
+save_settings:
+  save_path: "../out_pl"
+  batch_save_every: 2000000 # this is in steps
+
+trainer_settings:
+  accelerator: "gpu"
+  strategy: auto #ddp #ddp_spawn #"ddp_find_unused_parameters_true"
+  num_devices: 1 #2
+  num_nodes: 1
+
+torch_settings:
+  matmul_precision: high #"medium" # "high"
+
+transform_settings:
+  dataset_transform: "transform_0"
+  img_training_size: 224
+  crop_size:
+    - 196
+    - 196
+  crop_scale:
+    - 0.8
+    - 1.2
+  rot_range:
+    - -45
+    - 45
+  brightness_range:
+    - 0.8
+    - 1.2
+  contrast_range:
+    - 0.8
+    - 1.2
+  hue_range:
+    - -0.2
+    - 0.2
+  random_grayscale_prob: 0.1
+
+
+
+
+

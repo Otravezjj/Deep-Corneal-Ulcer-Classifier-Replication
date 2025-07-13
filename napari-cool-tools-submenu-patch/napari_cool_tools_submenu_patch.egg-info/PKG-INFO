@@ -1,0 +1,9 @@
+Metadata-Version: 2.4
+Name: napari-cool-tools-submenu-patch
+Version: 0.0.1
+Summary: A patch to move all the Cool Tools menu into a main submenu
+Author: Yakub Bayhaqi
+Classifier: Framework :: napari
+Requires-Python: >=3.8
+Requires-Dist: napari
+Requires-Dist: app_model

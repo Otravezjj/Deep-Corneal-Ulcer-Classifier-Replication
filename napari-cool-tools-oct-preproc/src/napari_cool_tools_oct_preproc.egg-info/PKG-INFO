@@ -1,0 +1,7 @@
+Metadata-Version: 2.4
+Name: napari-cool-tools-oct-preproc
+Version: 0.0.1
+Summary: Preprocessing Tools for OCT annotation and evaluation
+Requires-Python: >=3.8
+Requires-Dist: napari-cool-tools-submenu-patch
+Requires-Dist: numpy

@@ -1,0 +1,2 @@
+[napari.manifest]
+napari-cool-tools-oct-preproc = napari_cool_tools_oct_preproc:napari.yaml

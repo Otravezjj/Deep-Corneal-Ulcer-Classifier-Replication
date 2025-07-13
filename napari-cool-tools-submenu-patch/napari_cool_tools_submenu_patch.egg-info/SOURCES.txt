@@ -1,0 +1,9 @@
+pyproject.toml
+setup.cfg
+napari_cool_tools_submenu_patch/__init__.py
+napari_cool_tools_submenu_patch.egg-info/PKG-INFO
+napari_cool_tools_submenu_patch.egg-info/SOURCES.txt
+napari_cool_tools_submenu_patch.egg-info/dependency_links.txt
+napari_cool_tools_submenu_patch.egg-info/entry_points.txt
+napari_cool_tools_submenu_patch.egg-info/requires.txt
+napari_cool_tools_submenu_patch.egg-info/top_level.txt
