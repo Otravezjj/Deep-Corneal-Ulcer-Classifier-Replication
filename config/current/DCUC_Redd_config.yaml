@@ -1,0 +1,83 @@
+batch_settings:
+  target_batch_size: 128 #1024    #64 #256 #64 #256 #32   #trainng is sensitive to this humongo batch for SSL training smaller for finetuning quicker updates better for fine tune
+  batch_size: 128 #32 #128 #256 #64 #16 #32            #16 #32 #1 #32 #128 #16
+
+callback_settings:
+  unfreeze_epoch: 20 #1 #2 #20
+  top_k: 5 #5
+  n_epoch: 5 #20
+  n_steps: 500 # currently this is not in use
+
+data_settings:
+  data_path: "/data/KeratitisDB/root/" #"../data"
+  trial_prefix: "DCUC_Dinov2_jj_pre" #"DCUC_MNV2_Redd" "DCUC_MNV4_Redd" #"KDB_finetune"
+  visual_sanity_check: False #False #True
+  num_workers: 0 #16 max should be num_cores//num_gpus = 16 on lambda
+  persistent_workers: True #False
+  shuffle: True #False #True
+  drop_last: True #False
+  dataset_model: "DeepLakeCUID"
+  save_chkpt_path: "checkpoints"
+  log_path: "logs"
+  has_metadata: True
+
+determinitstic_settings:
+  data_split_seed: 42
+  seed: 1683213118 #[1740330543, 1683213118, 2361551548,42,60]
+
+model_settings:
+  model_arch: dinov2-jj-pre #"MobileNetV2" #"MobileNetV4"
+  input_channels: 3 #1 #3  
+  num_classes: 2 #10 #2 # 10 classes instead of 2 seams to learn faster? maybe hidden layers are required?
+  loss_type: "crossentropy"
+  dropout_rate: 0.0 #0.5
+  lora_settings:
+    use_LoRA: False #True
+    freeze: False
+    unfreeze_last: False #True
+    unfreeze_norms: False #True
+
+save_settings:
+  save_path: "../checkpoints"
+  batch_save_every: 2000000 # this is in steps
+
+trainer_settings:
+  accelerator: "gpu"
+  strategy: auto #ddp #ddp_spawn #"ddp_find_unused_parameters_true"
+  precision: "16-mixed" #None, #16 outdated
+  matmul_precision: "medium" #"high"
+  num_devices: 1 #2
+  num_nodes: 1
+  lr: 1e-4 #1e-4 #1e-5 #1e-4 #1e-6 #1e-7 
+  num_epochs: 50 #25 #50 #40 #6 #4 #100 #225 #100 #25 #200 
+
+torch_settings:
+  matmul_precision: high #"medium" # "high"
+
+transform_settings:
+  dataset_transform: "transform_0" #"travis_transform" #"transform_0"
+  img_training_size: 224
+  crop_size:
+    - 196
+    - 196
+  crop_scale:
+    - 0.8
+    - 1.2
+  rot_range:
+    - -20 #-45
+    - 20 #45
+  brightness_range:
+    - 0.8
+    - 1.2
+  contrast_range:
+    - 0.8
+    - 1.2
+  hue_range:
+    - -0.2
+    - 0.2
+  random_grayscale_prob: 0.0 #0.1
+
+
+
+
+

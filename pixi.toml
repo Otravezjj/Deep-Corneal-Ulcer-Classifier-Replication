@@ -36,6 +36,7 @@ h5py = ">=3.12.5"
 peft = "==0.12.0"
 torchinfo = "==1.8.0"
 tensorboard = "==2.17.*"
+timm = "*"
 
 nvidia-cuda-runtime-cu12 = "==12.4.*"
 torch = { version = "==2.4.*", index = "https://download.pytorch.org/whl/cu124" }

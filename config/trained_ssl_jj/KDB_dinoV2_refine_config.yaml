@@ -1,0 +1,141 @@
+data_config:
+  config_path: /home/gordon_f/Projects/MY_SSL_WORKSHOP/dion-refining/config/MNIST_dinoV2_refine_config.yaml 
+  data_path: /home/gordon_f/Projects/Data-Zoo/Datasets                 # Path to training data
+  num_workers: 0 #16 #8 #16             # Number of dataloading workers per GPU our system 32 core cpu/ 2 GPU = 16 per GPU
+  seed: 0 #0 #42                    # random seed used for reproducibility sake # meaning of life the universe and eveything
+save_config:
+  trial_name: #Cifar10-Adam-paper-LR-BS-2048 #VOC-DINO-Lightly-Trial-Dinovits16 #VOC-DINO-Lightly-Trial-DistSampler-BatchNorm VOC-DINO-Lightly-Trial-Resnet VOC-DINO-Lightly-Trial-DistSampler VOC-DINO-Lightly-Trial
+  output_dir: /home/gordon_f/Projects/Dino-Train-Experiments/dino-lightly/output                 # Path to save logs and checkpoints
+  save_every_k_epochs: 30 #2 #20     # Save checkpoint every k epochs
+  min_every_k_steps: 20
+  ckpt_every_k_steps: 100 #20
+  top_k: 10 #5 #10
+  val_check_interval: 0.125 #0.125 #0.25 #0.5 #6435 #10000 #0.0001 #1.0
+training:
+  precision: "16-mixed" #None,
+  strategy: "auto" #"ddp_find_unused_parameters_true" #"ddp"       #None, fsdp
+  accelerator: "gpu"
+  use_fp16: True              # Whether or not to use half precision for training. Improves training time and memory requirements, but can provoke instability and slight decay of performance
+                              # We recommend disabling mixed precision if the loss is unstable, if reducing the patch size or if training with bigger ViTs
+  batch_size_per_gpu: 32 #64 #24 #48 #56 #32 #16 #64 #16 #4 #16 #512 #1024 #128 #64 #80 #96 #80 #64 #64 #32 #22 #16 #64      # Per-GPU batch-size : number of distinct images loaded on one GPU
+  target_batch_size: 1024 #2048 #1024 #256
+  epochs: 500 #120 #60 #200 #100 #300 #100 #10 #30 #40 #100 #1 #100                 # Number of epochs of training
+  centering: "centering" # or "sinkhorn_knopp"
+optim:
+  lr: 0.0005 #0.0005 #0.0002 #0.004 # base learning rate calc rate based on effective 0.0005(base LR) * (batch size/256) #0.002 #0.000125 #0.002 #0.0005
+  start_lr: .01  #.34   #old incorrect implementation numbers #.001 #1e-4 #1e-12   # fraction of learning rate used at start of warmup will end at full 1.0 * effective_lr
+  warmup_epochs: 0 #80 #10 #8 #0 #2 #6 #10           # Number of epochs for the linear learning-rate warm up
+  min_lr: 0 #1e-6                # Target LR at the end of optimization. We use a cosine LR schedule with linear warmup
+  optimizer: adamw          # We recommend using adamw with ViTs
+  matmul_precision: high #medium # high
+  momentum_loss: 0.99 #0.994 #0.99
+  weight_decay: 0 #0 #0.04 #0 #0.04          # Initial value of the weight decay. With ViT, a smaller value at the beginning of training works well
+  weight_decay_end: 0.4 #0.2 #0.4       # Final value of the weight decay. We use a cosine schedule for WD and using a larger decay by the end of training improves performance for ViTs
+  clip_grad: 3.0              # Maximal parameter gradient norm if using gradient clipping. Clipping with norm .3 ~ 1.0 can help optimization for larger ViT architectures. 0 for disabling
+  freeze_last_layer: 1        # Number of epochs during which we keep the output layer fixed. Typically doing so during the first epoch helps training. Try increasing this value if the loss does not decrease 
+                              # Perhpas put this with the DinoHead then?
+  adamw_beta1: 0.9
+  adamw_beta2: 0.999  
+distributed:
+  use_distributed_sampler: true
+  ngpus: 1 #2                    # our system has 2
+  nodes: 1                    # out system is 1 node
+  sync_batchnorm: true
+  gather_distributed: true
+crops:
+  global_crop_number: 2
+  global_crop_scale:         # Scale range of the cropped image before resizing, relatively to the origin image. Used for large global view cropping. When disabling multi-crop (--local_crops_number 0), we
+    - 0.32 #0.4 #0.8 #0.4                     # recommand using a wider range of scale ("--global_crops_scale 0.14 1." for example)
+    - 1.0
+  local_crop_number: 8 #0 #6 #8       # Number of small local views to generate. Set this parameter to 0 to disable multi-crop training. When disabling multi-crop we recommend to use "--global_crops_scale 0.14 1
+  local_crop_scale:           # Scale range of the cropped image before resizing, relatively to the origin image. Used for small local view cropping of multi-crop
+    - 0.05 #0.1 #0.05 #0.5 #0.05
+    - 0.32 #0.4
+  global_crop_size: 224 #32 #512/518 #28 #56      # default is 224, but later epochs trained at higher resolution 518
+  local_crop_size: 98 #16 #28 #98 #96
+transforms:
+  hf_prob: 0.5
+  vf_prob: 0.0
+  rr_prob: 0
+  rr_degrees: null
+  cj_prob: 0.8 #0.0 #0.8
+  cj_strength: 0.5 #0.0 #0.5
+  cj_bright: 0.4 #0.0 #0.4
+  cj_contrast: 0.4 #0.0 #0.4
+  cj_sat: 0.2 #0.0 #0.2
+  cj_hue: 0.1 #0.0 #0.1
+  random_gray_scale: 0.2 #0.0 #0.2
+  gaussian_blur:
+    - 1.0
+    - 0.1
+    - 0.5
+  kernel_size:
+    - 3
+    - 3
+  kernel_scale: null
+  sigmas:
+    - 0.1
+    - 2.0
+  solarization_prob: 0.2 #0.0 #0.2
+model:
+  dino_config:
+      use_ibot: true #false #true
+      arch_type: dinov2 #dinov2 #dino
+  student:
+    arch: vit_small             # vit_tiny, vit_small, vit_base, vit_large, vit_giant2
+                                # Name of architecture to train. For quick experiments with ViTs,we recommend using vit_tiny or vit_small.
+    patch_size: 14 #16 #14              # Size in pixels of input square patches - default 16 (for 16x16 patches). Using smaller values leads to 
+                                # better performance but requires more memory. Applies only for ViTs (vit_tiny, vit_small and vit_base)
+    max_img_size: 224 #518 #32 #518 #512 #518           # maximum image size used during training used to calculate positional embedings for the model
+    drop_path_rate: 0.0 #0.4 #0.0 #0.3 Needs to be lower for smaller models 0.05 ish max for Vit-Small, 0.1,0.3,0.5 for B,L,G respectively confirm
+    drop_path_uniform: false #true
+    layerscale: 1.0e-05
+    pretrained_weights: '' #'/home/gordon_f/Projects/Dino-Train-Experiments/fb-dinoV2/jj_pretrained/dinov2_vits14_weights.pth'
+    ffn_layer: "mlp" #"swiglufused" #"mlp"
+    block_chunks: 0
+    qkv_bias: true
+    proj_bias: true
+    ffn_bias: true
+    num_register_tokens: 0
+    interpolate_antialias: false
+    interpolate_offset: 0.1
+    student_temp: 0.1
+  teacher:
+    momentum_teacher: 0.99 #0.994 #0.99 #0.9995     # The value is increased to 1 during training with cosine schedule. We recommend setting a higher value with small batches: for example use 0.9995 with batch size of 256
+    final_momentum_teacher: 0 #0 #1
+    warmup_teacher_temp: 0.04 #0.04 #0.01   # Initial value for the teacher temperature: 0.04 works well in most cases. Try decreasing it if the training loss does not decrease
+    teacher_temp: 0.04 #0.04 #0.07          # Final value (after linear warmup) of the teacher temperature. For most experiments, anything above 0.07 is unstable. 
+                              # We recommend starting with the default value of 0.04 and increase this slightly if needed
+    warmup_teacher_epochs: 30 #18 #30 #10 #30    # Number of warmup epochs for the teacher temperature
+  dino:
+    loss_weight: 1.0
+    #out_dim: 65536              # Dimensionality of the DINO head output. For complex and large datasets large values (like 65k) work well
+    head_n_prototypes: 65536 #16384 #131072 #65536 #32768     # Dimensionality of the DINO head output. For complex and large datasets large values (like 65k) work well
+    #head_n_prototypes: 32768 # half of setting for large of 65536
+    head_bottleneck_dim: 256 #384 #256 #64 #256 #192 #192 is a guess 256
+    head_nlayers: 3 #2 #3
+    head_hidden_dim: 2048 #512 #2048 #1024 #2048
+    koleo_loss_weight: 0.1
+    use_bn_in_head: False       # Whether to use batch normalizations in projection head (Default: False)
+    norm_last_layer: True
+  ibot:
+    loss_weight: 1.0
+    mask_sample_probability: 0.5
+    mask_ratio_min_max:
+    - 0.1
+    - 0.5
+    separate_head: true #false # single head has not been implemented yet but is on the list
+    #out_dim: 65536              # Dimensionality of the DINO head output. For complex and large datasets large values (like 65k) work well
+    head_n_prototypes: 65536 #16384 #131072 #2048 #65536 #32768     # Dimensionality of the DINO head output. For complex and large datasets large values (like 65k) work well
+    #head_n_prototypes: 32768 # half of setting for large of 65536
+    head_bottleneck_dim: 256 #384 #256 #64 #256 #192 #192 is a guess 256
+    head_nlayers: 3 #2 #3
+    head_hidden_dim: 2048 #512 #2048 #1024 #2048
+    use_bn_in_head: False       # Whether to use batch normalizations in projection head (Default: False)
+    norm_last_layer: True
+  benchmarking:
+    knn_k: 20 #200
+    knn_t: 0.1
+    classes: 2
+  debugging:
+    detect_anomaly: false #false #true
