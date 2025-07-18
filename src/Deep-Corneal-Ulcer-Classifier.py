@@ -793,7 +793,7 @@ def generate_trial_name(config):
     return trial_name
 
 @my_timer
-def test_pipeline():
+def test_dataloaders():
     # get config
     config,_ = get_config()
 
@@ -843,7 +843,9 @@ def test_pipeline():
     )
     
     # generate test batch
-    batch = next(iter(train_dl))
+    train_batch = next(iter(train_dl))
+    val_batch = next(iter(val_dl))
+    test_batch = next(iter(test_dl))
     #print(f"batch:\n {batch}\n")
 
     if config.visual_sanity_check:
@@ -853,7 +855,9 @@ def test_pipeline():
 
         viewer = napari.Viewer(show=False)
         viewer.add_image(
-            batch[0].detach().cpu().squeeze().permute(-4, -2, -1, -3).numpy(),
+            train_batch[0].detach().cpu().squeeze().permute(-4, -2, -1, -3).numpy(),
+            val_batch[0].detach().cpu().squeeze().permute(-4, -2, -1, -3).numpy(),
+            test_batch[0].detach().cpu().squeeze().permute(-4, -2, -1, -3).numpy(),
             name="image_batch",
         )
         viewer.show()
@@ -1089,15 +1093,17 @@ def train_model():
     #break
 
     print(f"\n\nStarting trial for {trial_name} with learning rate: {config.lr}.\n\n")
-    trainer.fit(model=redd_model,train_dataloaders=train_dl,val_dataloaders=val_dl)
+    #trainer.fit(model=redd_model,train_dataloaders=train_dl,val_dataloaders=val_dl)
+    trainer.fit(model=redd_model,train_dataloaders=test_dl,val_dataloaders=val_dl)
     print("\n\nTraining complete\n\n")
 
-    logs= trainer.test(dataloaders=test_dl,ckpt_path="best")
+    #logs= trainer.test(dataloaders=test_dl,ckpt_path="best")
+    logs= trainer.test(dataloaders=train_dl,ckpt_path="best")
 
 #loss_metric = torch.nn.CrossEntropyLoss()
 #redd_model = generate_Redd_model(initial_config,loss_metric=loss_metric,metadata=False)
 
 # run testd
 #test_model_generation()
-#test_pipeline()
-train_model()
+test_dataloaders()
+#train_model()
