@@ -11,7 +11,7 @@ callback_settings:
 data_settings:
   data_path: "/data/KeratitisDB/root/" #"../data"
   trial_prefix: "DCUC_Dinov2_jj_pre" #"DCUC_MNV2_Redd" "DCUC_MNV4_Redd" #"KDB_finetune"
-  visual_sanity_check: False #False #True
+  visual_sanity_check: True #False #True
   num_workers: 0 #16 max should be num_cores//num_gpus = 16 on lambda
   persistent_workers: True #False
   shuffle: True #False #True

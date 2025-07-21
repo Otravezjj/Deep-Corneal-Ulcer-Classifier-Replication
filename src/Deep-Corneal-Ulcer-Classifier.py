@@ -1068,21 +1068,28 @@ def train_model():
     config_df = pl.DataFrame(config_yaml)
     config_df.write_ndjson(save_config_path)
 
-    batch = next(iter(train_dl))
-
     if config.visual_sanity_check:
         print("\n\nPerforming Visual Sanity Check\n\n")
         # view test batch
         import napari
 
+            # generate test batch
+        train_batch = next(iter(train_dl))
+        val_batch = next(iter(val_dl))
+        test_batch = next(iter(test_dl))
+
         viewer = napari.Viewer(show=False)
         viewer.add_image(
-            batch[0].detach().cpu().squeeze().numpy(),
-            name="image_batch",
+            train_batch[0].detach().cpu().squeeze().permute(-4, -2, -1, -3).numpy(),name="image_batch",
+        )
+        viewer.add_image(
+            val_batch[0].detach().cpu().squeeze().permute(-4, -2, -1, -3).numpy(),name="image_batch",
+        )
+        viewer.add_image(
+            test_batch[0].detach().cpu().squeeze().permute(-4, -2, -1, -3).numpy(),name="image_batch",
         )
         viewer.show()
         napari.run()
-
         print("\n\nVisual Sanity Check Complete\n\n")
 
     redd_model = generate_Redd_model(config,loss_metric=loss_metric,config_yaml=config_yaml,save_chkpt_path=save_chkpt_path) #,metadata=config.has_metadata)
@@ -1137,4 +1144,4 @@ def train_model():
 # run testd
 #test_model_generation()
 test_dataloaders()
-#train_model()
+train_model()
