@@ -305,6 +305,8 @@ Deeplake_Trivial_Preproc = torch.nn.Sequential(
 
 crop_size = initial_config.crop_size
 crop_scale = initial_config.crop_scale
+hfp = initial_config.hfp
+vfp = initial_config.vfp
 rot_range = initial_config.rot_range
 brightness_range = initial_config.brightness_range
 contrast_range = initial_config.contrast_range
@@ -312,12 +314,22 @@ hue_range = initial_config.hue_range
 random_grayscale_prob = initial_config.random_grayscale_prob
 
 transform_options = {
+    "resize_normalize" : Deeplake_preproc6,
+    "travis_resize_normalize": torch.nn.Sequential(
+        v2.ToPILImage(),
+        v2.Resize(
+            size=(initial_config.img_training_size, initial_config.img_training_size)
+        ),
+        to_tensor,
+        v2.Normalize(mean=[0.5,0.5,0.5], std=[0.5,0.5,0.5]),
+    ),
     "travis_transform" : torch.nn.Sequential(
         v2.ToPILImage(),
         v2.Resize(
             size=(initial_config.img_training_size, initial_config.img_training_size)
         ),
-        v2.RandomVerticalFlip(),
+        v2.RandomHorizontalFlip(hfp),
+        v2.RandomVerticalFlip(vfp),
         to_tensor,
         v2.Normalize(mean=[0.5,0.5,0.5], std=[0.5,0.5,0.5]),
         v2.RandomRotation(rot_range),
@@ -327,8 +339,8 @@ transform_options = {
         # v2.RandomCrop((192,192)),
         Deeplake_preproc6,
         v2.RandomResizedCrop(crop_size, crop_scale),
-        v2.RandomHorizontalFlip(),
-        v2.RandomVerticalFlip(),
+        v2.RandomHorizontalFlip(hfp),
+        v2.RandomVerticalFlip(vfp),
         v2.RandomRotation(rot_range),
         v2.ColorJitter(
             brightness=brightness_range, contrast=contrast_range, hue=hue_range
@@ -340,8 +352,8 @@ transform_options = {
     ),
     "trivial_like": torch.nn.Sequential(
         Deeplake_preproc6,
-        v2.RandomHorizontalFlip(),
-        v2.RandomVerticalFlip(),
+        v2.RandomHorizontalFlip(hfp),
+        v2.RandomVerticalFlip(vfp),
         v2.RandomResizedCrop(crop_size, crop_scale),
         v2.RandomChoice(
             [
@@ -363,7 +375,19 @@ transform_options = {
     ),
 }
 
-def get_dataset_transform(name: str):
+def get_train_dataset_transform(name: str):
+    if name in transform_options.keys():
+        return transform_options[name]
+    else:
+        print(f"The requested transform {name} is not supported")
+
+def get_val_dataset_transform(name: str):
+    if name in transform_options.keys():
+        return transform_options[name]
+    else:
+        print(f"The requested transform {name} is not supported")
+
+def get_test_dataset_transform(name: str):
     if name in transform_options.keys():
         return transform_options[name]
     else:
@@ -812,12 +836,14 @@ def test_dataloaders():
     dataset_model = get_dataset_model(config.dataset_model)
 
     # get transform
-    dataset_transform = get_dataset_transform(config.dataset_transform)
+    train_dataset_transform = get_train_dataset_transform(config.train_dataset_transform)
+    val_dataset_transform = get_val_dataset_transform(config.val_dataset_transform)
+    test_dataset_transform = get_test_dataset_transform(config.test_dataset_transform)
 
     # create dataset
-    dl_train_ds = dataset_model(dl_train_data, transform=dataset_transform)
-    dl_val_ds = dataset_model(dl_train_data, transform=dataset_transform)
-    dl_test_ds = dataset_model(dl_test_data, transform=dataset_transform)
+    dl_train_ds = dataset_model(dl_train_data, transform=train_dataset_transform)
+    dl_val_ds = dataset_model(dl_train_data, transform=val_dataset_transform)
+    dl_test_ds = dataset_model(dl_test_data, transform=test_dataset_transform)
 
     # create dataloader
     train_dl = DataLoader(
@@ -848,21 +874,24 @@ def test_dataloaders():
     test_batch = next(iter(test_dl))
     #print(f"batch:\n {batch}\n")
 
-    if config.visual_sanity_check:
-        print("\n\nPerforming Visual Sanity Check\n\n")
-        # view test batch
-        import napari
+    #if config.visual_sanity_check:
+    print("\n\nPerforming Visual Sanity Check\n\n")
+    # view test batch
+    import napari
 
-        viewer = napari.Viewer(show=False)
-        viewer.add_image(
-            train_batch[0].detach().cpu().squeeze().permute(-4, -2, -1, -3).numpy(),
-            val_batch[0].detach().cpu().squeeze().permute(-4, -2, -1, -3).numpy(),
-            test_batch[0].detach().cpu().squeeze().permute(-4, -2, -1, -3).numpy(),
-            name="image_batch",
-        )
-        viewer.show()
-        napari.run()
-        print("\n\nVisual Sanity Check Complete\n\n")
+    viewer = napari.Viewer(show=False)
+    viewer.add_image(
+        train_batch[0].detach().cpu().squeeze().permute(-4, -2, -1, -3).numpy(),name="image_batch",
+    )
+    viewer.add_image(
+        val_batch[0].detach().cpu().squeeze().permute(-4, -2, -1, -3).numpy(),name="image_batch",
+    )
+    viewer.add_image(
+        test_batch[0].detach().cpu().squeeze().permute(-4, -2, -1, -3).numpy(),name="image_batch",
+    )
+    viewer.show()
+    napari.run()
+    print("\n\nVisual Sanity Check Complete\n\n")
 
     
 
@@ -989,12 +1018,14 @@ def train_model():
     dataset_model = get_dataset_model(config.dataset_model)
     
     # get transform
-    dataset_transform = get_dataset_transform(config.dataset_transform)
+    train_dataset_transform = get_train_dataset_transform(config.train_dataset_transform)
+    val_dataset_transform = get_val_dataset_transform(config.val_dataset_transform)
+    test_dataset_transform = get_test_dataset_transform(config.test_dataset_transform)
 
     # create dataset
-    dl_train_ds = dataset_model(dl_train_data, transform=dataset_transform)
-    dl_val_ds = dataset_model(dl_train_data, transform=dataset_transform)
-    dl_test_ds = dataset_model(dl_test_data, transform=dataset_transform)
+    dl_train_ds = dataset_model(dl_train_data, transform=train_dataset_transform)
+    dl_val_ds = dataset_model(dl_train_data, transform=val_dataset_transform)
+    dl_test_ds = dataset_model(dl_test_data, transform=test_dataset_transform)
 
     # create dataloader
     train_dl = DataLoader(

@@ -55,7 +55,9 @@ torch_settings:
   matmul_precision: high #"medium" # "high"
 
 transform_settings:
-  dataset_transform: "transform_0" #"travis_transform" #"transform_0"
+  train_dataset_transform: "transform_0" #"travis_transform" #"transform_0"
+  val_dataset_transform: "resize_normalize" #"resize_normalize" #"travis_resize_normalize"
+  test_dataset_transform: "resize_normalize"  #"resize_normalize" #"travis_resize_normalize"
   img_training_size: 224
   crop_size:
     - 196
@@ -63,6 +65,8 @@ transform_settings:
   crop_scale:
     - 0.8
     - 1.2
+  hfp: 0.5
+  vfp: 0.5
   rot_range:
     - -20 #-45
     - 20 #45
