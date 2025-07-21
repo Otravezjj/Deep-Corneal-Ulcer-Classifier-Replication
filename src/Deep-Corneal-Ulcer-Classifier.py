@@ -824,13 +824,17 @@ def test_dataloaders():
     loss_metric = get_loss(config.loss_type)
     batch_accum = config.target_batch_size/config.batch_size
 
+    print("\n\nSetting Deterministic Data Flags\n\n")
     # set random seed to make data deterministic
-    pl.set_random_seed(config.data_split_seed)
-    set_deterministic(config=config)
+    random.seed(config.data_split_seed)
 
     # get data splits
     dl_train_data, dl_val_data, dl_test_data = get_deeplake_data_splits(config=config)
     dl_train_data.summary(), dl_val_data.summary(), dl_test_data.summary()
+
+    print("\n\nSetting Deterministic Training Flags\n\n")
+    # set random seed to make data deterministic
+    set_deterministic(config=config)
 
     # get dataset_model
     dataset_model = get_dataset_model(config.dataset_model)
@@ -997,10 +1001,6 @@ def train_model():
     torch.set_float32_matmul_precision = config.matmul_precision
     print(f"\n\ntorch matmul precision set to: {config.matmul_precision}\n\n")
 
-    print("\n\nSetting Deterministic Flags\n\n")
-    # set random seed to make data deterministic
-    set_deterministic(config=config)
-
     print("\n\nConfiguration loaded\n\n")
     loss_metric = get_loss(config.loss_type)
     print(f"\n\nloss metric: {loss_metric}\n\n")
@@ -1010,9 +1010,17 @@ def train_model():
     else:
         batch_accum = 1
 
+    print("\n\nSetting Deterministic Data Flags\n\n")
+    # set random seed to make data deterministic
+    random.seed(config.data_split_seed)
+
     # get data splits
     dl_train_data, dl_val_data, dl_test_data = get_deeplake_data_splits(config=config)
     dl_train_data.summary(), dl_val_data.summary(), dl_test_data.summary()
+
+    print("\n\nSetting Deterministic Training Flags\n\n")
+    # set random seed to make data deterministic
+    set_deterministic(config=config)
 
     # get dataset_model
     dataset_model = get_dataset_model(config.dataset_model)
@@ -1091,6 +1099,8 @@ def train_model():
         viewer.show()
         napari.run()
         print("\n\nVisual Sanity Check Complete\n\n")
+
+    return
 
     redd_model = generate_Redd_model(config,loss_metric=loss_metric,config_yaml=config_yaml,save_chkpt_path=save_chkpt_path) #,metadata=config.has_metadata)
 

@@ -22,7 +22,7 @@ data_settings:
   has_metadata: True
 
 determinitstic_settings:
-  data_split_seed: 42
+  data_split_seed: 42 #42 #60
   seed: 1683213118 #[1740330543, 1683213118, 2361551548,42,60]
 
 model_settings:
