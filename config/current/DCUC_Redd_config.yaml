@@ -1,6 +1,8 @@
 batch_settings:
   target_batch_size: 128 #1024    #64 #256 #64 #256 #32   #trainng is sensitive to this humongo batch for SSL training smaller for finetuning quicker updates better for fine tune
-  batch_size: 128 #32 #128 #256 #64 #16 #32            #16 #32 #1 #32 #128 #16
+  train_batch_size: 128 #32 #128 #256 #64 #16 #32            #16 #32 #1 #32 #128 #16
+  val_batch_size: 64
+  test_batch_size: 64
 
 callback_settings:
   unfreeze_epoch: 20 #1 #2 #20
@@ -12,10 +14,11 @@ data_settings:
   data_path: "/data/KeratitisDB/root/" #"../data"
   trial_prefix: "DCUC_Dinov2_jj_pre" #"DCUC_MNV2_Redd" "DCUC_MNV4_Redd" #"KDB_finetune"
   visual_sanity_check: True #False #True
+  visual_sanity_batch_size: 32
   num_workers: 0 #16 max should be num_cores//num_gpus = 16 on lambda
   persistent_workers: True #False
   shuffle: True #False #True
-  drop_last: True #False
+  drop_last: False #True #False
   dataset_model: "DeepLakeCUID"
   save_chkpt_path: "checkpoints"
   log_path: "logs"
@@ -49,7 +52,7 @@ trainer_settings:
   num_devices: 1 #2
   num_nodes: 1
   lr: 1e-4 #1e-4 #1e-5 #1e-4 #1e-6 #1e-7 
-  num_epochs: 50 #25 #50 #40 #6 #4 #100 #225 #100 #25 #200 
+  num_epochs: 30 #50 #25 #50 #40 #6 #4 #100 #225 #100 #25 #200 
 
 torch_settings:
   matmul_precision: high #"medium" # "high"

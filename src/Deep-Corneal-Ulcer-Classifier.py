@@ -852,21 +852,21 @@ def test_dataloaders():
     # create dataloader
     train_dl = DataLoader(
         dl_train_ds,
-        batch_size=config.batch_size, # TODO change to config
+        batch_size=config.visual_sanity_batch_size, # TODO change to config
         shuffle=config.shuffle,
         num_workers=config.num_workers,
         drop_last=config.drop_last,
     )
     val_dl = DataLoader(
         dl_val_ds,
-        batch_size=config.batch_size, # TODO change to config
+        batch_size=config.visual_sanity_batch_size, # TODO change to config
         shuffle=config.shuffle,
         num_workers=config.num_workers,
         drop_last=config.drop_last,
     )
     test_dl = DataLoader(
         dl_test_ds,
-        batch_size=config.batch_size, # TODO change to config
+        batch_size=config.visual_sanity_batch_size, # TODO change to config
         shuffle=config.shuffle,
         num_workers=config.num_workers,
         drop_last=config.drop_last,
@@ -1005,8 +1005,8 @@ def train_model():
     loss_metric = get_loss(config.loss_type)
     print(f"\n\nloss metric: {loss_metric}\n\n")
 
-    if config.target_batch_size > config.batch_size:
-        batch_accum = config.target_batch_size/config.batch_size
+    if config.target_batch_size > config.train_batch_size:
+        batch_accum = config.target_batch_size/config.train_batch_size
     else:
         batch_accum = 1
 
@@ -1038,21 +1038,21 @@ def train_model():
     # create dataloader
     train_dl = DataLoader(
         dl_train_ds,
-        batch_size=config.batch_size, # TODO change to config
+        batch_size=config.train_batch_size, # TODO change to config
         shuffle=config.shuffle,
         num_workers=config.num_workers,
         drop_last=config.drop_last,
     )
     val_dl = DataLoader(
         dl_val_ds,
-        batch_size=config.batch_size, # TODO change to config
+        batch_size=config.val_batch_size, # TODO change to config
         shuffle=config.shuffle,
         num_workers=config.num_workers,
         drop_last=config.drop_last,
     )
     test_dl = DataLoader(
         dl_test_ds,
-        batch_size=config.batch_size, # TODO change to config
+        batch_size=config.test_batch_size, # TODO change to config
         shuffle=config.shuffle,
         num_workers=config.num_workers,
         drop_last=config.drop_last,
@@ -1102,7 +1102,7 @@ def train_model():
 
     redd_model = generate_Redd_model(config,loss_metric=loss_metric,config_yaml=config_yaml,save_chkpt_path=save_chkpt_path) #,metadata=config.has_metadata)
 
-    print(f"\n\nModel loaded:\n{summary(redd_model, input_size=(config.batch_size, config.input_channels, config.img_training_size, config.img_training_size))}\n\n")
+    print(f"\n\nModel loaded:\n{summary(redd_model, input_size=(config.train_batch_size, config.input_channels, config.img_training_size, config.img_training_size))}\n\n")
 
     trainer = L.Trainer(
         max_epochs=config.num_epochs,
