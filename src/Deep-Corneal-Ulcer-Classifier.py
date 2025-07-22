@@ -1127,7 +1127,7 @@ def train_model():
     print("\n\nLogger initialized\n\n")
 
     # save trial settings with checkpoints
-    save_chkpt_path.mkdir(parents=False,exist_ok=True)
+    save_chkpt_path.mkdir(parents=True,exist_ok=True)
     save_config_path = f"{save_chkpt_path}/{trial_name}_config.yaml"
     config_dict = OmegaConf.to_container(config)
     #config_df = pl.DataFrame(config_yaml)
@@ -1173,20 +1173,178 @@ def train_model():
     config_df.write_ndjson(save_config_path)
 
     print(f"\n\nStarting trial for {trial_name} with learning rate: {config.lr}.\n\n")
-    #trainer.fit(model=redd_model,train_dataloaders=train_dl,val_dataloaders=val_dl)
-    trainer.fit(model=redd_model,train_dataloaders=test_dl,val_dataloaders=val_dl)
+    trainer.fit(model=redd_model,train_dataloaders=train_dl,val_dataloaders=val_dl)
+    #trainer.fit(model=redd_model,train_dataloaders=test_dl,val_dataloaders=val_dl)
     print("\n\nTraining complete\n\n")
 
-    #logs= trainer.test(dataloaders=test_dl,ckpt_path="best")
-    logs= trainer.test(dataloaders=train_dl,ckpt_path="best")
-
+    logs= trainer.test(dataloaders=test_dl,ckpt_path="best")
+    #logs= trainer.test(dataloaders=train_dl,ckpt_path="best")
 
 
 def load_model_chekpoint(model,checkpoint_path:Path|str):
     """"""
+    checkpoint = torch.load(checkpoint_path,weights_only=True)
+    print(f"Checkpoint keys {checkpoint.keys()}")
+    model.load_state_dict(checkpoint["state_dict"])
+    return model
 
+@my_timer
+def test_load_model_checkpoint(checkpoint_path:Path|str):
+    # get config
+    config = get_config()
+
+    print("\n\nSetting Deterministic Data Flags\n\n")
+    # set random seed to make data deterministic
+    random.seed(config.data_split_seed)
+
+    # get data splits
+    dl_train_data, dl_val_data, dl_test_data = get_deeplake_data_splits(config=config)
+    dl_train_data.summary(), dl_val_data.summary(), dl_test_data.summary()
+
+    print("\n\nSetting Deterministic Training Flags\n\n")
+    # set random seed to make data deterministic
+    set_deterministic(config=config)
+
+    # get dataset_model
+    dataset_model = get_dataset_model(config.dataset_model)
+    
+    # get transform
+    train_dataset_transform = get_train_dataset_transform(config.train_dataset_transform)
+    val_dataset_transform = get_val_dataset_transform(config.val_dataset_transform)
+    test_dataset_transform = get_test_dataset_transform(config.test_dataset_transform)
+
+    # create dataset
+    dl_train_ds = dataset_model(dl_train_data, transform=train_dataset_transform)
+    dl_val_ds = dataset_model(dl_val_data, transform=val_dataset_transform)
+    dl_test_ds = dataset_model(dl_test_data, transform=test_dataset_transform)
+
+    # create dataloader
+    train_dl = DataLoader(
+        dl_train_ds,
+        batch_size=config.train_batch_size, # TODO change to config
+        shuffle=config.shuffle,
+        num_workers=config.num_workers,
+        drop_last=config.drop_last,
+    )
+    val_dl = DataLoader(
+        dl_val_ds,
+        batch_size=config.val_batch_size, # TODO change to config
+        shuffle=config.shuffle,
+        num_workers=config.num_workers,
+        drop_last=config.drop_last,
+    )
+    test_dl = DataLoader(
+        dl_test_ds,
+        batch_size=config.test_batch_size, # TODO change to config
+        shuffle=config.shuffle,
+        num_workers=config.num_workers,
+        drop_last=config.drop_last,
+    )
+
+    print("\n\nDataloaders initialized\n\n")
+
+    vis_san_check = False
+    if vis_san_check: #config.visual_sanity_check:
+        print("\n\nPerforming Visual Sanity Check\n\n")
+        # view test batch
+        import napari
+
+            # generate test batch
+        train_batch = next(iter(train_dl))
+        val_batch = next(iter(val_dl))
+        test_batch = next(iter(test_dl))
+
+        viewer = napari.Viewer(show=False)
+        viewer.add_image(
+            train_batch[0].detach().cpu().squeeze().permute(-4, -2, -1, -3).numpy(),name="train_image_batch",
+        )
+        viewer.add_image(
+            val_batch[0].detach().cpu().squeeze().permute(-4, -2, -1, -3).numpy(),name="val_image_batch",
+        )
+        viewer.add_image(
+            test_batch[0].detach().cpu().squeeze().permute(-4, -2, -1, -3).numpy(),name="test_image_batch",
+        )
+        viewer.show()
+        napari.run()
+        print("\n\nVisual Sanity Check Complete\n\n")
+
+    # generate trial name
+    trial_name = generate_trial_name(config)
+
+    # setup paths
+    log_path = Path(__file__).parents[1] / f"{config.log_path}/{trial_name}"
+    save_chkpt_path = Path(__file__).parents[1] / f"{config.save_chkpt_path}/{trial_name}"
+
+    torch.set_float32_matmul_precision = config.matmul_precision
+    print(f"\n\ntorch matmul precision set to: {config.matmul_precision}\n\n")
+
+    print("\n\nConfiguration loaded\n\n")
+    loss_metric = get_loss(config.loss_type)
+    print(f"\n\nloss metric: {loss_metric}\n\n")
+
+    if config.target_batch_size > config.train_batch_size:
+        batch_accum = config.target_batch_size/config.train_batch_size
+    else:
+        batch_accum = 1
+
+    # get model
+    redd_model = generate_Redd_model(config,loss_metric=loss_metric,save_chkpt_path=save_chkpt_path) #,metadata=config.has_metadata)
+    print(f"\n\nModel loaded:\n{summary(redd_model, input_size=(config.train_batch_size, config.input_channels, config.img_training_size, config.img_training_size))}\n\n")
+
+    # load model weights from checkpoint
+    redd_model_weighted = load_model_chekpoint(redd_model,checkpoint_path=checkpoint_path)
+
+    callbacks = generate_callbacks(config, trial_name=trial_name)
+    print("\n\nCallbacks initialized\n\n")
+
+    logger = TensorBoardLogger(save_dir=log_path, name=trial_name)
+    print("\n\nLogger initialized\n\n")
+
+    trainer = L.Trainer(
+        max_epochs=config.num_epochs,
+        logger=logger,
+        callbacks=callbacks,
+        precision=config.precision,
+        strategy=config.strategy,
+        accelerator=config.accelerator,
+        devices=config.num_devices,
+        num_nodes=config.num_nodes,
+        accumulate_grad_batches=batch_accum,
+    )
+
+    trainer.test(
+        redd_model,
+        #redd_model_weighted,
+        dataloaders=test_dl,
+    )
+
+
+def test_checkpoints_gui():
+    """"""
+    from magicgui import magicgui
+
+    @magicgui(
+        checkpoint_file_path={"label": "Path to model checkpoints.","mode":"r"},
+        call_button="Load checkpoint and test model"
+    )
+    def load_and_test_checkpoint(
+        checkpoint_file_path:Path=Path(__file__).parents[1]/"checkpoints/dummpy_file_path.ckpt",
+    ):
+        """
+        """
+        test_load_model_checkpoint(checkpoint_path=checkpoint_file_path)
+
+    load_and_test_checkpoint.show(run=True)
+        
 
 # run tests
 #test_model_generation()
 #test_dataloaders()
-train_model()
+#train_model()
+
+# checkpoints_path = Path(__file__).parents[1] / "checkpoints"
+# checkpoint_file_path = checkpoints_path / "DCUC_Dinov2_jj_pre_dinov2-jj-pre_Full_Data_07-22-2025_14h45m42s/DCUC_Dinov2_jj_pre_dinov2-jj-pre_Full_Data_07-22-2025_14h45m42s_min_5_loss-val_loss=0.5876-epoch=0006-step=49.ckpt"
+# assert checkpoint_file_path.exists()
+# test_load_model_checkpoint(checkpoint_file_path)
+
+test_checkpoints_gui()

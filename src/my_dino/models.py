@@ -88,14 +88,23 @@ class LitDINOv2(L.LightningModule):
         self.loss_metric = loss_metric
         self.num_classes = num_classes
         #self.acc_metric = acc_metric
-        self.f1_metric = F1Score(task='multiclass',num_classes=num_classes,average='weighted')#,ignore_index=0)
-        self.acc_metric = Accuracy(task='multiclass',num_classes=num_classes,average='weighted')
-        self.recall_metric = Recall(task='multiclass',num_classes=num_classes,average='weighted')
-        self.precision_metric = Precision(task='multiclass',num_classes=num_classes,average='weighted')
+        # self.f1_metric = F1Score(task='multiclass',num_classes=num_classes,average='weighted')#,ignore_index=0)
+        # self.acc_metric = Accuracy(task='multiclass',num_classes=num_classes,average='weighted')
+        # self.recall_metric = Recall(task='multiclass',num_classes=num_classes,average='weighted')
+        # self.precision_metric = Precision(task='multiclass',num_classes=num_classes,average='weighted')
+        # #self.stat_scores_metric = StatScores(task='multiclass',num_classes=num_classes,average='macro')
+        # self.confusion_matrix = ConfusionMatrix(task='multiclass',num_classes=num_classes)
+        # self.AUROC = AUROC(task='multiclass',num_classes=self.num_classes,average='weighted')
+        # self.AP = AveragePrecision(task='multiclass',num_classes=self.num_classes,average='weighted')
+
+        self.f1_metric = F1Score(task='multiclass',num_classes=num_classes,average=None)#,ignore_index=0)
+        self.acc_metric = Accuracy(task='multiclass',num_classes=num_classes,average='macro')
+        self.recall_metric = Recall(task='multiclass',num_classes=num_classes,average='macro')
+        self.precision_metric = Precision(task='multiclass',num_classes=num_classes,average='macro')
         #self.stat_scores_metric = StatScores(task='multiclass',num_classes=num_classes,average='macro')
         self.confusion_matrix = ConfusionMatrix(task='multiclass',num_classes=num_classes)
-        self.AUROC = AUROC(task='multiclass',num_classes=self.num_classes,average='weighted')
-        self.AP = AveragePrecision(task='multiclass',num_classes=self.num_classes,average='weighted')        
+        self.AUROC = AUROC(task='multiclass',num_classes=self.num_classes,average='macro')
+        self.AP = AveragePrecision(task='multiclass',num_classes=self.num_classes,average='macro')        
 
         #self.acc_metric = F1Score(task='binary',num_classes=num_classes,average='macro')
         
