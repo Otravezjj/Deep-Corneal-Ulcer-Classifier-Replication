@@ -852,21 +852,21 @@ def test_dataloaders():
     # create dataloader
     train_dl = DataLoader(
         dl_train_ds,
-        batch_size=16, # TODO change to config
+        batch_size=config.batch_size, # TODO change to config
         shuffle=config.shuffle,
         num_workers=config.num_workers,
         drop_last=config.drop_last,
     )
     val_dl = DataLoader(
         dl_val_ds,
-        batch_size=16, # TODO change to config
+        batch_size=config.batch_size, # TODO change to config
         shuffle=config.shuffle,
         num_workers=config.num_workers,
         drop_last=config.drop_last,
     )
     test_dl = DataLoader(
         dl_test_ds,
-        batch_size=16, # TODO change to config
+        batch_size=config.batch_size, # TODO change to config
         shuffle=config.shuffle,
         num_workers=config.num_workers,
         drop_last=config.drop_last,
@@ -1032,27 +1032,27 @@ def train_model():
 
     # create dataset
     dl_train_ds = dataset_model(dl_train_data, transform=train_dataset_transform)
-    dl_val_ds = dataset_model(dl_train_data, transform=val_dataset_transform)
+    dl_val_ds = dataset_model(dl_val_data, transform=val_dataset_transform)
     dl_test_ds = dataset_model(dl_test_data, transform=test_dataset_transform)
 
     # create dataloader
     train_dl = DataLoader(
         dl_train_ds,
-        batch_size=16, # TODO change to config
+        batch_size=config.batch_size, # TODO change to config
         shuffle=config.shuffle,
         num_workers=config.num_workers,
         drop_last=config.drop_last,
     )
     val_dl = DataLoader(
         dl_val_ds,
-        batch_size=16, # TODO change to config
+        batch_size=config.batch_size, # TODO change to config
         shuffle=config.shuffle,
         num_workers=config.num_workers,
         drop_last=config.drop_last,
     )
     test_dl = DataLoader(
         dl_test_ds,
-        batch_size=16, # TODO change to config
+        batch_size=config.batch_size, # TODO change to config
         shuffle=config.shuffle,
         num_workers=config.num_workers,
         drop_last=config.drop_last,
@@ -1151,5 +1151,5 @@ def train_model():
 
 # run testd
 #test_model_generation()
-test_dataloaders()
+#test_dataloaders()
 train_model()

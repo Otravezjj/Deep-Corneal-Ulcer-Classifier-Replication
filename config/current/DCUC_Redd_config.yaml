@@ -60,26 +60,26 @@ transform_settings:
   test_dataset_transform: "resize_normalize"  #"resize_normalize" #"travis_resize_normalize"
   img_training_size: 224
   crop_size:
-    - 196
-    - 196
+    - 210
+    - 210
   crop_scale:
-    - 0.8
-    - 1.2
+    - 0.9
+    - 1.1
   hfp: 0.5
   vfp: 0.5
   rot_range:
-    - -20 #-45
-    - 20 #45
+    - -45 #-20 #-45
+    - 45 #20 #45
   brightness_range:
-    - 0.8
-    - 1.2
+    - 0.9
+    - 1.1
   contrast_range:
-    - 0.8
-    - 1.2
+    - 0.9
+    - 1.1
   hue_range:
-    - -0.2
-    - 0.2
-  random_grayscale_prob: 0.0 #0.1
+    - -0.1
+    - 0.1
+  random_grayscale_prob: 0.1 #0.0 #0.1
 
 
 
