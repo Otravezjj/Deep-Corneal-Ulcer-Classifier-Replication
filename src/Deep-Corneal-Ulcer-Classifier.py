@@ -1100,8 +1100,6 @@ def train_model():
         napari.run()
         print("\n\nVisual Sanity Check Complete\n\n")
 
-    return
-
     redd_model = generate_Redd_model(config,loss_metric=loss_metric,config_yaml=config_yaml,save_chkpt_path=save_chkpt_path) #,metadata=config.has_metadata)
 
     print(f"\n\nModel loaded:\n{summary(redd_model, input_size=(config.batch_size, config.input_channels, config.img_training_size, config.img_training_size))}\n\n")
