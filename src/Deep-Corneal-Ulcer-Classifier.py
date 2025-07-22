@@ -72,10 +72,10 @@ def get_config():
     config_dict = load_yaml_settings(config_path=config_file_path)
     full_config = OmegaConf.create(config_dict)
     config = remove_organizational_headings(full_config)
-    return config,config_dict
+    return config #,config_dict
 
 
-initial_config,_ = get_config()
+initial_config = get_config()
 
 
 def set_deterministic(config):
@@ -764,7 +764,7 @@ def select_model(name:str):
         print(f"The requested transform {name} is not supported")
 
 #def generate_Redd_model(config,loss_metric,metadata):
-def generate_Redd_model(config,loss_metric,config_yaml=None,save_chkpt_path=None):
+def generate_Redd_model(config,loss_metric,save_chkpt_path=None):
     #print(f"mobilenets:\n{timm.list_models('*mobilenet*', pretrained=True)}")
     #print(f"efficientets:\n{timm.list_models('*efficientnet*', pretrained=True)}")
 
@@ -783,8 +783,10 @@ def generate_Redd_model(config,loss_metric,config_yaml=None,save_chkpt_path=None
     elif config.model_arch == "dinov2-jj-pre":
         model = get_pretrained_ssl_model(weights_path=r"/mnt/d/JJ/Dev2/Redd_Lab/Projects/Saved_Models/KDB_Pass_0/Full_SSL/active_weights/")
 
-        #LoRA_args = config.lora_settings
-        LoRA_args = config_yaml["model_settings"]["lora_settings"]
+        LoRA_args = config.lora_settings
+        #LoRA_args = config_yaml["model_settings"]["lora_settings"]
+
+        #print(f"\n\nomegaconfig version:\n\n{config.lora_settings}\n\nyaml version:\n\n{LoRA_args}\n\n")
 
         redd_model = LitDINOv2(
             model,
@@ -819,10 +821,10 @@ def generate_trial_name(config):
 @my_timer
 def test_dataloaders():
     # get config
-    config,_ = get_config()
+    config = get_config()
 
-    loss_metric = get_loss(config.loss_type)
-    batch_accum = config.target_batch_size/config.batch_size
+    #loss_metric = get_loss(config.loss_type)
+    #batch_accum = config.target_batch_size/config.train_batch_size
 
     print("\n\nSetting Deterministic Data Flags\n\n")
     # set random seed to make data deterministic
@@ -846,27 +848,49 @@ def test_dataloaders():
 
     # create dataset
     dl_train_ds = dataset_model(dl_train_data, transform=train_dataset_transform)
-    dl_val_ds = dataset_model(dl_train_data, transform=val_dataset_transform)
+    dl_val_ds = dataset_model(dl_val_data, transform=val_dataset_transform)
     dl_test_ds = dataset_model(dl_test_data, transform=test_dataset_transform)
 
     # create dataloader
+    # train_dl = DataLoader(
+    #     dl_train_ds,
+    #     batch_size=config.visual_sanity_batch_size, # TODO change to config
+    #     shuffle=config.shuffle,
+    #     num_workers=config.num_workers,
+    #     drop_last=config.drop_last,
+    # )
+    # val_dl = DataLoader(
+    #     dl_val_ds,
+    #     batch_size=config.visual_sanity_batch_size, # TODO change to config
+    #     shuffle=config.shuffle,
+    #     num_workers=config.num_workers,
+    #     drop_last=config.drop_last,
+    # )
+    # test_dl = DataLoader(
+    #     dl_test_ds,
+    #     batch_size=config.visual_sanity_batch_size, # TODO change to config
+    #     shuffle=config.shuffle,
+    #     num_workers=config.num_workers,
+    #     drop_last=config.drop_last,
+    # )
+
     train_dl = DataLoader(
         dl_train_ds,
-        batch_size=config.visual_sanity_batch_size, # TODO change to config
+        batch_size=config.train_batch_size, # TODO change to config
         shuffle=config.shuffle,
         num_workers=config.num_workers,
         drop_last=config.drop_last,
     )
     val_dl = DataLoader(
         dl_val_ds,
-        batch_size=config.visual_sanity_batch_size, # TODO change to config
+        batch_size=config.val_batch_size, # TODO change to config
         shuffle=config.shuffle,
         num_workers=config.num_workers,
         drop_last=config.drop_last,
     )
     test_dl = DataLoader(
         dl_test_ds,
-        batch_size=config.visual_sanity_batch_size, # TODO change to config
+        batch_size=config.test_batch_size, # TODO change to config
         shuffle=config.shuffle,
         num_workers=config.num_workers,
         drop_last=config.drop_last,
@@ -885,13 +909,13 @@ def test_dataloaders():
 
     viewer = napari.Viewer(show=False)
     viewer.add_image(
-        train_batch[0].detach().cpu().squeeze().permute(-4, -2, -1, -3).numpy(),name="image_batch",
+        train_batch[0].detach().cpu().squeeze().permute(-4, -2, -1, -3).numpy(),name="train_image_batch",
     )
     viewer.add_image(
-        val_batch[0].detach().cpu().squeeze().permute(-4, -2, -1, -3).numpy(),name="image_batch",
+        val_batch[0].detach().cpu().squeeze().permute(-4, -2, -1, -3).numpy(),name="val_image_batch",
     )
     viewer.add_image(
-        test_batch[0].detach().cpu().squeeze().permute(-4, -2, -1, -3).numpy(),name="image_batch",
+        test_batch[0].detach().cpu().squeeze().permute(-4, -2, -1, -3).numpy(),name="test_image_batch",
     )
     viewer.show()
     napari.run()
@@ -902,7 +926,7 @@ def test_dataloaders():
 @my_timer
 def test_model_generation():
 
-    config,_ = get_config()
+    config = get_config()
 
     torch.set_float32_matmul_precision = config.matmul_precision
     print(f"\n\ntorch matmul precision set to: {config.matmul_precision}\n\n")
@@ -996,19 +1020,8 @@ def test_model_generation():
 @my_timer
 def train_model():
 
-    config,config_yaml = get_config()
-
-    torch.set_float32_matmul_precision = config.matmul_precision
-    print(f"\n\ntorch matmul precision set to: {config.matmul_precision}\n\n")
-
-    print("\n\nConfiguration loaded\n\n")
-    loss_metric = get_loss(config.loss_type)
-    print(f"\n\nloss metric: {loss_metric}\n\n")
-
-    if config.target_batch_size > config.train_batch_size:
-        batch_accum = config.target_batch_size/config.train_batch_size
-    else:
-        batch_accum = 1
+    # get config
+    config = get_config()
 
     print("\n\nSetting Deterministic Data Flags\n\n")
     # set random seed to make data deterministic
@@ -1060,22 +1073,6 @@ def train_model():
 
     print("\n\nDataloaders initialized\n\n")
 
-    trial_name = generate_trial_name(config)
-
-    callbacks = generate_callbacks(config, trial_name=trial_name)
-    print("\n\nCallbacks initialized\n\n")
-
-    log_path = Path(__file__).parents[1] / f"{config.log_path}/{trial_name}"
-    logger = TensorBoardLogger(save_dir=log_path, name=trial_name)
-    print("\n\nLogger initialized\n\n")
-
-    # save trial settings with checkpoints
-    save_chkpt_path = Path(__file__).parents[1] / f"{config.save_chkpt_path}/{trial_name}"
-    save_chkpt_path.mkdir(parents=False,exist_ok=True)
-    save_config_path = f"{save_chkpt_path}/{trial_name}_config.yaml"
-    config_df = pl.DataFrame(config_yaml)
-    config_df.write_ndjson(save_config_path)
-
     if config.visual_sanity_check:
         print("\n\nPerforming Visual Sanity Check\n\n")
         # view test batch
@@ -1088,21 +1085,56 @@ def train_model():
 
         viewer = napari.Viewer(show=False)
         viewer.add_image(
-            train_batch[0].detach().cpu().squeeze().permute(-4, -2, -1, -3).numpy(),name="image_batch",
+            train_batch[0].detach().cpu().squeeze().permute(-4, -2, -1, -3).numpy(),name="train_image_batch",
         )
         viewer.add_image(
-            val_batch[0].detach().cpu().squeeze().permute(-4, -2, -1, -3).numpy(),name="image_batch",
+            val_batch[0].detach().cpu().squeeze().permute(-4, -2, -1, -3).numpy(),name="val_image_batch",
         )
         viewer.add_image(
-            test_batch[0].detach().cpu().squeeze().permute(-4, -2, -1, -3).numpy(),name="image_batch",
+            test_batch[0].detach().cpu().squeeze().permute(-4, -2, -1, -3).numpy(),name="test_image_batch",
         )
         viewer.show()
         napari.run()
         print("\n\nVisual Sanity Check Complete\n\n")
 
-    redd_model = generate_Redd_model(config,loss_metric=loss_metric,config_yaml=config_yaml,save_chkpt_path=save_chkpt_path) #,metadata=config.has_metadata)
+    # generate trial name
+    trial_name = generate_trial_name(config)
 
+    # setup paths
+    log_path = Path(__file__).parents[1] / f"{config.log_path}/{trial_name}"
+    save_chkpt_path = Path(__file__).parents[1] / f"{config.save_chkpt_path}/{trial_name}"
+
+    torch.set_float32_matmul_precision = config.matmul_precision
+    print(f"\n\ntorch matmul precision set to: {config.matmul_precision}\n\n")
+
+    print("\n\nConfiguration loaded\n\n")
+    loss_metric = get_loss(config.loss_type)
+    print(f"\n\nloss metric: {loss_metric}\n\n")
+
+    if config.target_batch_size > config.train_batch_size:
+        batch_accum = config.target_batch_size/config.train_batch_size
+    else:
+        batch_accum = 1
+
+    # get model
+    redd_model = generate_Redd_model(config,loss_metric=loss_metric,save_chkpt_path=save_chkpt_path) #,metadata=config.has_metadata)
     print(f"\n\nModel loaded:\n{summary(redd_model, input_size=(config.train_batch_size, config.input_channels, config.img_training_size, config.img_training_size))}\n\n")
+
+    callbacks = generate_callbacks(config, trial_name=trial_name)
+    print("\n\nCallbacks initialized\n\n")
+
+    logger = TensorBoardLogger(save_dir=log_path, name=trial_name)
+    print("\n\nLogger initialized\n\n")
+
+    # save trial settings with checkpoints
+    save_chkpt_path.mkdir(parents=False,exist_ok=True)
+    save_config_path = f"{save_chkpt_path}/{trial_name}_config.yaml"
+    config_dict = OmegaConf.to_container(config)
+    #config_df = pl.DataFrame(config_yaml)
+    config_df = pl.DataFrame(config_dict)
+    #print(config_df)
+    
+    #return
 
     trainer = L.Trainer(
         max_epochs=config.num_epochs,
@@ -1138,6 +1170,8 @@ def train_model():
     #return
     #break
 
+    config_df.write_ndjson(save_config_path)
+
     print(f"\n\nStarting trial for {trial_name} with learning rate: {config.lr}.\n\n")
     #trainer.fit(model=redd_model,train_dataloaders=train_dl,val_dataloaders=val_dl)
     trainer.fit(model=redd_model,train_dataloaders=test_dl,val_dataloaders=val_dl)
@@ -1146,10 +1180,13 @@ def train_model():
     #logs= trainer.test(dataloaders=test_dl,ckpt_path="best")
     logs= trainer.test(dataloaders=train_dl,ckpt_path="best")
 
-#loss_metric = torch.nn.CrossEntropyLoss()
-#redd_model = generate_Redd_model(initial_config,loss_metric=loss_metric,metadata=False)
 
-# run testd
+
+def load_model_chekpoint(model,checkpoint_path:Path|str):
+    """"""
+
+
+# run tests
 #test_model_generation()
 #test_dataloaders()
 train_model()
